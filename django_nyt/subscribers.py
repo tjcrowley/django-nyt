@@ -1,6 +1,6 @@
 import logging
-
-from channels import Group
+# removed group call and imported async-to-sync for message
+from asgiref.sync import async_to_sync
 
 from . import models, settings
 
@@ -17,11 +17,17 @@ def notify_subscribers(notifications, key):
     notification_type_ids = models.NotificationType.objects.values('key').filter(key=key)
 
     for notification_type in notification_type_ids:
-        g = Group(
-            settings.NOTIFICATION_CHANNEL.format(
-                notification_key=notification_type['key']
-            )
-        )
-        g.send(
-            {'text': 'new-notification'}
-        )
+
+    #
+    # use async to sync to send message instead of deprecated group class.
+
+        async_to_sync(settings.NOTIFICATION_CHANNEL.group_send)(notification_type['key'], {"text": "new-notification"})
+
+   #     g = Group(
+   #         settings.NOTIFICATION_CHANNEL.format(
+   #             notification_key=notification_type['key']
+   #         )
+   #     )
+   #     g.send(
+   #         {'text': 'new-notification'}
+   #     )
